@@ -1,10 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 </head>
 <body>
-$END$
+<h1>Lag en ny bruker</h1>
+<label for="fornavnInput">Fornavn</label>
+<input id="fornavnInput">
+<label for="etterNavnInput">Etternavn</label>
+<input id="etterNavnInput">
+<label for="epostInput">Epost</label>
+<input id="epostInput">
+<label for="passordInput">Passord</label>
+<input id="passordInput">
+<button id="buttonInput">Lag bruker</button>
+<script>
+
+    $("#buttonInput").click(async function(){
+
+        bruker = {
+            fornavn : $("#fornavnInput").val(),
+            etternavn : $("#etterNavnInput").val(),
+            epost : $("#epostInput").val(),
+            passord : $("#passordInput").val()
+        };
+
+        try {
+           await $.post("/lagBruker", bruker)
+            {
+                window.location.href = "lagbruker.html";
+            }
+
+        }catch{
+        alert("Du puttet ikke inn passende input for å lage ny bruker")
+        }
+    })
+
+
+</script>
 </body>
 </html>

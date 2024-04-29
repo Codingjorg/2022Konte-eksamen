@@ -1,10 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Title</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 </head>
 <body>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3" style="background-color: lightskyblue; padding-bottom : 30px">
+            <label for="Lager-ID-input">Lager-ID for pakke</label>
+            <input id="Lager-ID-input" >
+            <label for="Eier-ID-input">Eier-ID for pakke</label>
+            <input id="Eier-ID-input" >
+            <label for="Vekt-input">Vekt av pakke</label>
+            <input id="Vekt-input" >
+            <label for="Volum-input">Volum av pakke</label>
+            <input id="Volum-input" >
+            <button id="lagreKnapp" class="btn btn-primary">Lagre</button>
+            <a href="/login.html" class="btn btn-primary">Log inn her</a>
+        </div>
+        <div class="col-lg-9">
+<!--            Brukte heller en table isteden for div å putte tabellen inn i grunnet at vi da får-->
+<!--            farget tabellen bedre-->
+            <div id="tableDIV" class="table table-striped">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div id="tableDIVLager" class="table table-striped">
+        </div>
+    </div>
+</div>
+</div>
+<script>
+    $(function() {
+        hentAllePakker();
+        hentAlleLagere();
+    });
 
+    async function hentAllePakker() {
+        const pakker = await $.get("/hentAllePakker");
+        await formaterAllePakker(pakker);
+    }
+    async function hentAlleLagere() {
+        const lagere = await $.get("/hentAlleLagere");
+        await formaterAlleLagere(lagere);
+    }
+
+    async function formaterAlleLagere(lagere) {
+            let ut = "<table class='table table-striped' style='background-color: cyan'>" +
+                "<tr>" +
+                "<th>Lager-ID</th><th>Lagernavn</th><th>Adresse</th><th>PakkeAntall</th><th>Total vekt for pakker</th><th>Totalt volum for pakker</th>" +
+                "</tr>";
+            for (let i in lagere) {
+                const lagerantall = await hentLagerPakkeAntall(lagere[i].lagerid);
+                const lagerTotalVekt = await hentLagerPakkeTotalVekt(lagere[i].lagerid);
+                const lagerTotalVolum = await hentLagerTotalVolum(lagere[i].lagerid);
+                ut += "<tr class='" + lagere[i].lagerid + " " + 'lagertestTR' + " '>" +
+                    "<td>" + lagere[i].lagerid + "</td>" +
+                    "<td>" + lagere[i].lagernavn + "</td>" +
+                    "<td class='lagertest'>" + lagere[i].adresse + "</td>" +
+                    "<td class='lagertest'>" + lagerantall + "</td>" +
+                    "<td class='lagertest'>" + lagerTotalVekt + "</td>" +
+                    "<td class='lagertest'>" + lagerTotalVolum + "</td>" +
+                    "</tr>";
+            }
+            $("#tableDIVLager").html(ut);
+    }
+
+    async function formaterAllePakker(pakker) {
+        if(pakker==null){
+            return;
+        }else {
+            let ut = "<table class='table table-striped' style='background-color: mediumspringgreen'>" +
+                "<tr>" +
+                "<th>Pakke-ID</th><th>Eier-ID</th><th>Lager-ID</th><th>Vekt av pakke</th><th>Volum av pakke</th><th>Lagernavn</th><th>Epost til eier</th>" +
+                "</tr>";
+            for (let i in pakker) {
+                const lagernavn = await hentLagerNavn(pakker[i].lagerid);
+                const epost = await hentEpostNavn(pakker[i].eierid);
+                ut += "<tr class='" + pakker[i].lagerid + " " + 'lagertestTR' + " '>" +
+                    "<td>" + pakker[i].pakkeid + "</td>" +
+                    "<td>" + pakker[i].eierid + "</td>" +
+                    "<td class='lagertest'>" + pakker[i].lagerid + "</td>" +
+                    "<td>" + pakker[i].vekt + "</td>" +
+                    "<td>" + pakker[i].volum + "</td>" +
+                    "<td>" + lagernavn + "</td>" +
+                    "<td>" + epost + "</td>" +
+                    "</tr>";
+            }
+            $("#tableDIV").html(ut);
+        }
+    }
+
+    async function hentLagerNavn(lagerid) {
+        const lagernavn = await $.get("/hentEttLagernavn?lagerid=" + lagerid);
+        return lagernavn;
+    }
+
+    async function hentLagerTotalVolum(lagerid){
+        const lagerPakkeTotalVolum = await $.get("/hentSumVolumforLager?lagerid="+lagerid);
+        return lagerPakkeTotalVolum;
+    }
+
+    async function hentLagerPakkeAntall(lagerid) {
+        const lagerPakkeAntall = await $.get("/hentLagerAntall?lagerid=" + lagerid);
+        return lagerPakkeAntall;
+    }
+
+    async function hentLagerPakkeTotalVekt(lagerid){
+        const lagerPakkeTotalVekt = await $.get("/hentSumVektforLager?lagerid="+lagerid);
+        return lagerPakkeTotalVekt;
+    }
+
+    async function hentEpostNavn(eierid){
+        const eierEpost = await $.get("/hentEnEpost?eierid=" + eierid);
+        console.log(eierEpost);
+        return eierEpost;
+    }
+
+    $("#lagreKnapp").click(async function(){
+        const innpakke = {
+            lagerid : $("#Lager-ID-input").val(),
+            eierid : $("#Eier-ID-input").val(),
+            vekt : $("#Vekt-input").val(),
+            volum : $("#Volum-input").val()
+        }
+
+        let feilmelding = "";
+
+        let maxBrukerID = await $.get("/hentHoyestBrukerID");
+        try {
+            innpakke.eierid = BigInt(innpakke.eierid);
+            if(innpakke.eierid > maxBrukerID || innpakke.eierid <= 0 ){
+                feilmelding +=("Eierid eksiterer ikke i vår database.\n")
+            }
+        }catch(e){
+            feilmelding +=("Eier id er ikke av typen heltall.\n");
+            console.log(e)
+
+        }
+        try {
+            innpakke.lagerid = BigInt(innpakke.lagerid);
+            if(innpakke.lagerid > maxBrukerID || innpakke.lagerid <= 0 ){
+                feilmelding += ("Lagerid eksiterer ikke i vår database.\n");
+            }
+            }catch(e){
+                feilmelding+=("Lager id er ikke av typen heltall\n");
+                console.log(e)
+            }
+        try {
+            innpakke.vekt = BigInt(innpakke.vekt);
+           if(innpakke.vekt <= 0){
+               innpakke.vekt = "tekst som gir error ikke lar deg ha 0 i vekt";
+               throw new Error("Vekt er 0 eller mindre");
+           }
+            }catch(e){
+            feilmelding +=("Enten er så har du puttet in bokstaver i vekt kolonnen, eller så har du lagt in en verdi under 1 \n");
+        }
+        try {
+            innpakke.volum = BigInt(innpakke.volum);
+            if(innpakke.volum <= 0){
+                innpakke.volum = "tekst som gir error ikke lar deg ha 0 i volum";
+                throw new Error("Volum er 0 eller mindre");
+            }
+        }catch{
+            feilmelding+=("Enten er så har du puttet in bokstaver i volum kolonnen, eller så har du lagt in en verdi under 1");
+        }
+        try {
+            await $.post("/lagreEnPakke", innpakke);
+            window.location.href = 'index.html';
+        }catch{
+        alert("Vi kunne ikke sende inn skjemaet til serveren fordi det var noen feil, her er dem: \n" + feilmelding)
+        }
+    });
+</script>
 </body>
 </html>

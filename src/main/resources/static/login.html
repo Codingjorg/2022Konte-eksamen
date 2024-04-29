@@ -1,10 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 </head>
 <body>
-$END$
+<h1>Log inn</h1>
+<label for="epostInput">Epost</label>
+<input id="epostInput">
+<label for="passordInput">Passord</label>
+<input id="passordInput">
+<button id="logInnButton" class="btn btn-primary">Log inn</button>
+<a href="lagbruker.html" class="btn btn-primary">Lag en ny bruker</a>
+<script>
+
+    $("#logInnButton").click(async function(){
+    bruker = {
+        epost : $("#epostInput").val(),
+        passord : $("#passordInput").val()
+    }
+    $.get("/login",bruker, function(status){
+
+        if(status){
+            alert("Du er logget inn")
+            window.location.href="index.html";
+        }else{
+            alert("Du har ikke puttet inn gyldig informasjon i epost eller passord")
+        }
+
+    })
+
+    })
+
+
+
+</script>
 </body>
 </html>
