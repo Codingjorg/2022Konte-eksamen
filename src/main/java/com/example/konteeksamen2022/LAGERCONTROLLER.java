@@ -30,9 +30,10 @@ public class LAGERCONTROLLER {
     }
 
     @GetMapping("/hentAllePakker")
-    public List<Pakke> hentAllePakkerCon(){
+    public List<Pakke> hentAllePakkerCon(HttpServletResponse response) throws IOException {
         System.out.println("Alle pakker ble hentet");
-        if(session.getAttribute("Innlogget")==null){   return rep.hentAllePakker();}else {
+        if(session.getAttribute("Innlogget")!=null){   return rep.hentAllePakker();}else {
+            response.sendError(HttpStatus.NOT_FOUND.value());
             return null;
         }
     }
@@ -58,7 +59,7 @@ public class LAGERCONTROLLER {
     public void lagreEnPakkeCon(Pakke pakke, HttpServletResponse response) throws IOException {
         System.out.println("En pakke ble lagret");
         if(validerPakke(pakke) == false) {
-            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Feil i Validering - prøv igjen senere")
+            response.sendError(HttpStatus.NOT_ACCEPTABLE.value(), "Feil i Validering - prøv igjen senere")
             ;
         } else {
             if (!rep.lagrePakke(pakke)) {
@@ -83,7 +84,7 @@ public class LAGERCONTROLLER {
     }
 
     @GetMapping ("/hentLagerAntall")
-    public int hentAllePakkeAntallforLagerTabellCon(int lagerid) {
+    public String hentAllePakkeAntallforLagerTabellCon(int lagerid) {
         // Your logic to retrieve and return the lagernavn
         System.out.println(rep.tellPakkerPerLager(lagerid));
         return rep.tellPakkerPerLager(lagerid);

@@ -25,6 +25,7 @@
 <!--            Brukte heller en table isteden for div å putte tabellen inn i grunnet at vi da får-->
 <!--            farget tabellen bedre-->
             <div id="tableDIV" class="table table-striped">
+                <div id="feilHentAllePakker" style="color : red"></div>
             </div>
         </div>
     </div>
@@ -42,8 +43,12 @@
     });
 
     async function hentAllePakker() {
-        const pakker = await $.get("/hentAllePakker");
-        await formaterAllePakker(pakker);
+        const pakker = await $.get("/hentAllePakker").fail(function(jqXHR){
+            if(jqXHR.status == 404){
+                $("#feilHentAllePakker").html("Ingen pakker ble hentet ut.");
+            }
+        })
+        await formaterAllePakker(pakker)
     }
     async function hentAlleLagere() {
         const lagere = await $.get("/hentAlleLagere");

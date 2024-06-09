@@ -3,14 +3,19 @@ package com.example.konteeksamen2022;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.io.IOException;
 import java.util.List;
 
 @Repository
 public class PAKKEREPOSITORY {
+
+    private static final Logger logger = LoggerFactory.getLogger(PAKKEREPOSITORY.class);
 
     @Autowired
     private JdbcTemplate db;
@@ -18,21 +23,25 @@ public class PAKKEREPOSITORY {
 
     private boolean sjekkPassord(String passord, String hashPassord){
         BCryptPasswordEncoder bCrypt = new BCryptPasswordEncoder();
-        if(bCrypt.matches(hashPassord,passord)){
+        if(bCrypt.matches(passord,hashPassord)){
+            logger.info(bCrypt.matches(passord,hashPassord) + " var resultatet av sjekkPassord");
             return true;
         }
         return false;
     }
 
-    public boolean sjekkEpostOgPassord (Bruker bruker) {
+    public boolean sjekkEpostOgPassord (Bruker bruker) throws EmptyResultDataAccessException {
         String sql = "SELECT * FROM BRUKER WHERE epost=?";
         try{
-            Bruker dbBruker = db.queryForObject(sql,
-                    BeanPropertyRowMapper.newInstance(Bruker.class),new Object[]{bruker.getEpost()});
-            return sjekkPassord(dbBruker.getPassord(),bruker.getPassord());
+//            Bruker dbBruker = db.queryForObject(sql,
+//                    BeanPropertyRowMapper.newInstance(Bruker.class),new Object[]{bruker.getEpost()});
+            Bruker dbBruker = db.queryForObject(sql, new BeanPropertyRowMapper<>(Bruker.class), bruker.getEpost());
+            logger.info("sjekkEpostOgPassord ble kjørt");
+            return sjekkPassord(bruker.getPassord(), dbBruker.getPassord());
+
         }
         catch(Exception e) {
-            logger.error("Feil i sjekkNavnOgPassord : " + e);
+            logger.error("Feil i sjekkEpostOgPassord : " + e);
             return false;
         }
     }
@@ -56,7 +65,7 @@ public class PAKKEREPOSITORY {
         brukerIDincreaser++;
         return true;
     }catch(Exception e){
-            logger.error("Feil i lagrePakke : " + e);
+            logger.error("Feil i lagreEnBruker : " + e);
             return false;
         }
     }
@@ -65,7 +74,6 @@ public class PAKKEREPOSITORY {
 
     //PakkeID lager seg selv så vi trenger ikke putte det inn
 
-    private static final Logger logger = LoggerFactory.getLogger(PAKKEREPOSITORY.class);
 // Skal være 16 feil ift tabellnavn og tabellruter i denne classen.
 
 
@@ -90,10 +98,15 @@ public class PAKKEREPOSITORY {
 //        pakkeIDincreaser++;
 //    }
 
-    public int tellPakkerPerLager(int lagerid){
+    public String tellPakkerPerLager(int lagerid){
         String sql = "Select COUNT(PAKKE.lagerid) from PAKKE where lagerid=?";
-        int antall = db.queryForObject(sql, Integer.class,lagerid);
-        return antall;
+        try{
+        String antall = db.queryForObject(sql, String.class,lagerid);
+        return antall;}
+        catch(Exception e){
+            logger.error("TellPakkerPerLager funksjonen fikk en error");
+            return "ERROR";
+        }
     }
 
     public double summerVektAvPakkerPerLager(int lagerid){
@@ -112,8 +125,11 @@ public class PAKKEREPOSITORY {
 
     public List<Pakke> hentAllePakker() {
         String sql = "SELECT pakke.* FROM PAKKE";
+        try{
         List<Pakke> allePakker = db.query(sql,new BeanPropertyRowMapper(Pakke.class));
-        return allePakker;
+        return allePakker;}catch(Exception e){
+            return null;
+        }
     }
 
     public List<Lager> hentAlleLager() {
